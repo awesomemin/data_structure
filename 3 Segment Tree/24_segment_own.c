@@ -3,11 +3,11 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#define MAX_SIZE 100
+#define MAX_SIZE 100 // max size of array
 
 typedef struct _SegmentTree {
-  int nodes[2*MAX_SIZE+1];
-  int size;
+  int nodes[2*MAX_SIZE+1]; // it contains tree
+  int size; // number of nodes in tree
 } SegmentTree;
 
 int max(int a, int b);
@@ -41,50 +41,57 @@ int max(int a, int b) {
 void construct(int items[], int n, SegmentTree *tree) {
   // Write your own code
   // 1. count # of leaf nodes
-  int numLeafs = 1;
-  while (numLeafs < n) numLeafs *= 2;
-  tree->size = numLeafs*2 - 1;
-
   // 2. initialize leaf nodes
-  int i;
-  for (i = 1; i <= n; i ++)
-    tree->nodes[numLeafs + i -1] = items[i];
-  for (i = n+1; i <= numLeafs; i ++)
-    tree->nodes[numLeafs + i -1] = 0;
-
   // 3. initialize internal nodes
-  for (i = numLeafs-1; i >= 1; i --)
-    tree->nodes[i] = max(tree->nodes[i*2], tree->nodes[i*2+1]);
+  int numLeaf = 1;
+  while(numLeaf < n) numLeaf *= 2;
+  tree->size = numLeaf * 2 - 1;
+
+  int i;
+  for(i = 1; i <= n; i++) tree->nodes[numLeaf + i - 1] = items[i];
+  for(i = n + 1; i <= numLeaf; i++) tree->nodes[numLeaf + i - 1] = 0;
+
+  for(i = numLeaf - 1; i >= 1; i--) {
+    tree->nodes[i] = max(tree->nodes[i * 2], tree->nodes[i * 2 + 1]);
+  }
 }
 
 void update(SegmentTree *tree, int item, int index) {
   // Write your own code
   // 1. convert the array index to tree index
-  index = tree->size / 2 + index;
-
   // 2. update the leaf node
-  tree->nodes[index] = item;
-
   // 3. update its ancestors
-  for (index = index / 2; index >= 1; index /= 2) {
-    tree->nodes[index] = max(tree->nodes[index*2], tree->nodes[index*2+1]);
+  int treeIndex = (tree->size + 1) / 2 + index + 1;
+
+  tree->nodes[treeIndex] = item;
+
+  while(treeIndex != 1) {
+    treeIndex /= 2;
+    tree->nodes[treeIndex] = max(tree->nodes[treeIndex * 2], tree->nodes[treeIndex * 2 + 1]);
   }
 }
 
 int computeMax(SegmentTree *tree, int left, int right) {
+  // Write your own code
   // 1. convert the array indices to tree indices
-  left += tree->size / 2;
-  right += tree->size / 2;
-
   // 2. find representative nodes
-  int result = 0;
-  while (left <= right) {
-    if (left % 2 == 1) result = max(result, tree->nodes[left]);
-    if (right % 2 == 0) result = max(result, tree->nodes[right]);
-    left = (left + 1) / 2;
-    right = (right - 1) / 2;
+  int leftTreeIndex = tree->size / 2 + left;
+  int rightTreeIndex = tree->size / 2 + right;
+
+  int maxVal = 0;
+
+  while(leftTreeIndex <= rightTreeIndex) {
+    if(leftTreeIndex == (leftTreeIndex / 2) * 2 + 1) {
+      maxVal = max(tree->nodes[leftTreeIndex], maxVal);
+    }
+    if(rightTreeIndex == (rightTreeIndex / 2) * 2) {
+      maxVal = max(tree->nodes[rightTreeIndex], maxVal);
+    }
+    leftTreeIndex = (leftTreeIndex + 1) / 2;
+    rightTreeIndex = (rightTreeIndex - 1) / 2;
   }
-  return result;
+
+  return maxVal;
 }
 
 void print(SegmentTree *tree) {
